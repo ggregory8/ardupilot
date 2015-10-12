@@ -629,6 +629,7 @@ private:
     void userhook_MediumLoop();
     void userhook_SlowLoop();
     void userhook_SuperSlowLoop();
+    void custom_led();                                  // GG
     void update_home_from_EKF();
     void set_home_to_current_location_inflight();
     bool set_home_to_current_location();
