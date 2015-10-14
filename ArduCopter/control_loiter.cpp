@@ -21,6 +21,9 @@ bool Copter::loiter_init(bool ignore_checks)
         // initialise altitude target to stopping point
         pos_control.set_target_to_stopping_point_z();
 
+        // reset flag indicating if pilot has applied roll or pitch inputs during landing
+        ap.land_repo_active = false;
+
         return true;
     }else{
         return false;
@@ -50,6 +53,11 @@ void Copter::loiter_run()
         // get pilot desired climb rate
         target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->control_in);
         target_climb_rate = constrain_float(target_climb_rate, -g.pilot_velocity_z_max, g.pilot_velocity_z_max);
+
+        // record if pilot has overriden roll or pitch
+        if (channel_roll->control_in != 0 || channel_pitch->control_in != 0) {
+            ap.land_repo_active = true;
+        }
     } else {
         // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
         wp_nav.clear_pilot_desired_acceleration();
@@ -100,6 +108,13 @@ void Copter::loiter_run()
         // get takeoff adjusted pilot and takeoff climb rates
         takeoff_get_climb_rates(target_climb_rate, takeoff_climb_rate);
 
+		#if PRECISION_LANDING == ENABLED
+            // run precision landing
+            if (!ap.land_repo_active) {
+                    wp_nav.shift_loiter_target(precland.get_target_shift(wp_nav.get_loiter_target()));
+                }
+		#endif
+
         // run loiter controller
         wp_nav.update_loiter(ekfGndSpdLimit, ekfNavVelGainScaler);
 
@@ -127,6 +142,13 @@ void Copter::loiter_run()
         break;
 
     case Loiter_Flying:
+
+		#if PRECISION_LANDING == ENABLED
+        	// run precision landing
+        	if (!ap.land_repo_active) {
+        		wp_nav.shift_loiter_target(precland.get_target_shift(wp_nav.get_loiter_target()));
+        	}
+        #endif
 
         // run loiter controller
         wp_nav.update_loiter(ekfGndSpdLimit, ekfNavVelGainScaler);
