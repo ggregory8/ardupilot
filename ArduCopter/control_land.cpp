@@ -135,7 +135,6 @@ void Copter::land_gps_run()
             }
 
             // GG run precision landing
-    if (!ap.land_repo_active) {
             wp_nav.shift_loiter_target(precland.get_target_shift(wp_nav.get_loiter_target()));
         }
         else {
