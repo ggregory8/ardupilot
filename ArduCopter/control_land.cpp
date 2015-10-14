@@ -32,7 +32,20 @@ bool Copter::land_init(bool ignore_checks)
 
     // GG reset flag indicating if pilot has applied roll or pitch inputs during landing
     ap.land_repo_active = false;
+    land_repo_active_last = false;
 
+    if (!irlock_blob_detected)
+    {
+        // No IR-Lock fix when landing started, display notification on GCS HUD
+        gcs_send_text_P(SEVERITY_HIGH, PSTR("No IR-Lock fix - Landing with GPS")); 
+    }
+    else {
+        gcs_send_text_P(SEVERITY_HIGH, PSTR("IR-Lock fix acquired. Precision landing in progress"));
+    }
+
+    //GG Track if we have irlock fix when landing starts
+    irlock_fix_last = irlock_blob_detected;
+    
     return true;
 }
 
@@ -109,9 +122,39 @@ void Copter::land_gps_run()
     wp_nav.set_pilot_desired_acceleration(roll_control, pitch_control);
 
 #if PRECISION_LANDING == ENABLED
-    // GG run precision landing
+    gcs_send_text_P(SEVERITY_LOW, PSTR("Test in PRECLAND area"));
+    // Disable using precision landing if pilot makes adjustment
     if (!ap.land_repo_active) {
-        wp_nav.shift_loiter_target(precland.get_target_shift(wp_nav.get_loiter_target()));
+         // GG disable IR-Lock if IRLOCK_ALT = -1
+        if ((g.irlock_alt != -1.0f) && (irlock_blob_detected == true)) {
+            if (!irlock_fix_last)
+            {
+                // We have acquired IRLock fix. Issue audible notification to GCS
+                gcs_send_text_P(SEVERITY_HIGH, PSTR("IR-Lock fix acquired. Precision landing in progress"));
+                irlock_fix_last = true;
+            }
+
+            // GG run precision landing
+    if (!ap.land_repo_active) {
+            wp_nav.shift_loiter_target(precland.get_target_shift(wp_nav.get_loiter_target()));
+        }
+        else {
+            if ((g.irlock_alt != -1.0f) && irlock_fix_last)
+            {
+                // We had IRLock fix but now have lost it, display notification on GCS HUD
+                // We are always going to lose IR-Lock beacon under a certain altitude, so don't display message under 1m
+                if (current_loc.alt >= RTM_IGNORE_BEACAN_ALT)
+                    gcs_send_text_P(SEVERITY_HIGH, PSTR("IR-Lock fix lost - Landing with GPS")); 
+                irlock_fix_last = false;
+            }
+        }
+
+    }
+    else {
+        // Display error message when pilot repositioning 
+        if (ap.land_repo_active && !land_repo_active_last)
+            gcs_send_text_P(SEVERITY_HIGH, PSTR("IR-Lock disabled - Landing with GPS")); 
+        land_repo_active_last = true;
     }
 #endif
 

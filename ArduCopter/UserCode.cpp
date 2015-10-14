@@ -630,6 +630,11 @@ void Copter::debug_irlock()
         //gcs_send_text_fmt(PSTR("LED_QUAD hb: %d yaw: %d mav_home: %d"), rtm_bearing/100, ahrs.yaw_sensor/100, mav_to_rtm_bearing);
     //}
 
+	// TODO: This needs to go somewhere else
+#if PRECISION_LANDING == ENABLED
+	irlock_blob_detected = precland.healthy();
+#endif
+
     // IR-Lock Fix Aquired
     if (!last_irlock_state && irlock_blob_detected)
     {

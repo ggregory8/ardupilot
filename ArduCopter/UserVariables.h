@@ -28,6 +28,8 @@ bool     irlock_land_pause;    			// Keep track if we lose IR-lock during RTL la
 
 bool 	irlock_blob_detected;
 
+bool 	land_repo_active_last;			// Tack last state of ap.land_repo_active
+
 #endif  // USERHOOK_VARIABLES
 
 
