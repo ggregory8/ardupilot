@@ -104,6 +104,9 @@ public:
     /// set_monitoring - sets the monitor type (used for example sketch only)
     void set_monitoring(uint8_t instance, uint8_t mon) { _monitoring[instance].set(mon); }
 
+    //GG Return total pack capacity
+    float capacity_pack_total() const { return _pack_capacity[0]; }
+
     static const struct AP_Param::GroupInfo var_info[];
 
 protected:

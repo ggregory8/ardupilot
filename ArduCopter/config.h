@@ -730,6 +730,30 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+//GG Battery Consumption Code
+#ifndef BATT_AVG_XY_MA_DEFAULT
+ #define BATT_AVG_XY_MA_DEFAULT     0.0f
+#endif
+#ifndef BATT_AVG_Z_MA_DEFAULT
+ #define BATT_AVG_Z_MA_DEFAULT      0.0f
+#endif
+#ifndef BATT_HOME_WARN_DEFAULT
+ #define BATT_HOME_WARN_DEFAULT     120.0f
+#endif
+#ifndef BATT_HOME_FS_DEFAULT
+ #define BATT_HOME_FS_DEFAULT       500.f
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+//GG IR-Lock RTL code
+#ifndef IRLOCK_ALT_DEFAULT
+ #define IRLOCK_ALT_DEFAULT         1500.f
+#endif
+#ifndef IRLOCK_TIMEOUT_DEFAULT
+ #define IRLOCK_TIMEOUT_DEFAULT     2000.f
+#endif
+    
+//////////////////////////////////////////////////////////////////////////////
 // Developer Items
 //
 

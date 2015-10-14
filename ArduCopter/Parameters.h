@@ -168,6 +168,16 @@ public:
         //
         k_param_motors = 90,
 
+        // GG Battery Consumption Code
+        k_param_batt_avg_xy_ma = 92,
+        k_param_batt_avg_z_ma,
+        k_param_batt_home_warn,
+        k_param_batt_home_fs,
+
+        // GG IR-Lock RTL code
+        k_param_irlock_alt,
+        k_param_irlock_timeout,     //97
+
         //
         // 100: Inertial Nav
         //
@@ -502,6 +512,16 @@ public:
     AP_Int8                 autotune_axis_bitmask;
     AP_Float                autotune_aggressiveness;
     AP_Float                autotune_min_d;
+
+    //GG Battery Consumption Code
+    AP_Float                batt_avg_xy_ma;
+    AP_Float                batt_avg_z_ma;
+    AP_Float                batt_home_warn;
+    AP_Float                batt_home_fs;
+    
+    // GG IR-Lock RTL code
+    AP_Float                irlock_alt;    
+    AP_Float                irlock_timeout;
 
     // Note: keep initializers here in the same order as they are declared
     // above.

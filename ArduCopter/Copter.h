@@ -629,7 +629,16 @@ private:
     void userhook_MediumLoop();
     void userhook_SlowLoop();
     void userhook_SuperSlowLoop();
-    void custom_led();                                  // GG
+    // GG Custom Code Functions
+    void custom_led();
+    void batt_consumption();
+    void calc_rtm_distance_bearing();
+    void set_irlock_rtl_pause(bool pause_state);
+    void check_rtl_resume();
+    void set_irlock_land_pause(bool pause_state);
+    void check_land_resume();
+    void debug_irlock();
+
     void update_home_from_EKF();
     void set_home_to_current_location_inflight();
     bool set_home_to_current_location();

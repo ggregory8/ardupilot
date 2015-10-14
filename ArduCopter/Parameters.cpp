@@ -1080,6 +1080,49 @@ const AP_Param::Info Copter::var_info[] PROGMEM = {
     // @User: Standard
     GSCALAR(autotune_min_d, "AUTOTUNE_MIN_D", 0.004f),
 
+    // GG Battery Consumption Code
+    // @Param: BATT_AVG_XY_MA
+    // @DisplayName: Average XY Battery Consumption
+    // @Description: Average battery consumption when flying horizontal. 0 = Auto-calculate
+    // @Values: ma/s, 0:Auto Calculate 
+    // @User: Advanced
+    GSCALAR(batt_avg_xy_ma,  "BATT_AVG_XY_MA",    BATT_AVG_XY_MA_DEFAULT),
+
+    // @Param: BATT_AVG_Z_MA
+    // @DisplayName: Average Z Battery Consumption
+    // @Description: Average battery consumption when flying vertical. 0 = use BATT_AVG_XY_MA
+    // @Values: ma/s, 0:Use BATT_AVG_XY_MA
+    // @User: Advanced
+    GSCALAR(batt_avg_z_ma,  "BATT_AVG_Z_MA",    BATT_AVG_Z_MA_DEFAULT),
+
+    // @Param: BATT_HOME_WARN
+    // @DisplayName: Battery Distance Warning
+    // @Description: Warning time for low battery to return home
+    // @Values: s 
+    // @User: Advanced
+    GSCALAR(batt_home_warn,  "BATT_HOME_WARN",    BATT_HOME_WARN_DEFAULT),
+
+    // @Param: BATT_HOME_FS
+    // @DisplayName: Battery Distance Failsafe
+    // @Description: Activate battery distance failsafe and RTL
+    // @Values: ma 
+    // @User: Advanced
+    GSCALAR(batt_home_fs,  "BATT_HOME_FS",    BATT_HOME_FS_DEFAULT),
+    
+    // @Param: IRLOCK_ALT
+    // @DisplayName: IR-Lock Check Altitude
+    // @Description: Altitude to descend to before checking for IR-Lock fix
+    // @Values: cm 
+    // @User: Advanced
+    GSCALAR(irlock_alt,  "IRLOCK_ALT",    IRLOCK_ALT_DEFAULT),
+
+    // @Param: IRLOCK_TIMEOUT
+    // @DisplayName: IR-Lock Lost Beacon Timeout
+    // @Description: Time (ms) that we don't have becean signal before timing out and stopping IRLock land
+    // @Values: ms
+    // @User: Advanced
+    GSCALAR(irlock_timeout,  "IRLOCK_TIMEOUT",    IRLOCK_TIMEOUT_DEFAULT),
+
     AP_VAREND
 };
 
