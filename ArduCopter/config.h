@@ -325,6 +325,11 @@
  # define SPRAYER  DISABLED
 #endif
 
+// Precision Landing with companion computer or IRLock sensor     // GG-IRlock3.3
+#ifndef PRECISION_LANDING
+ # define PRECISION_LANDING DISABLED
+#endif
+
 //////////////////////////////////////////////////////////////////////////////
 //	EPM cargo gripper
 #ifndef EPM_ENABLED
