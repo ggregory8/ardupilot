@@ -110,7 +110,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] PROGMEM = {
     { SCHED_TASK(three_hz_loop),       133,     75 },
     { SCHED_TASK(compass_accumulate),    8,    100 },
     { SCHED_TASK(barometer_accumulate),  8,     90 },
-#if PRECISION_LANDING == ENABLED                        //GG
+#if PRECISION_LANDING == ENABLED                        // GG-IRlock3.3
     { SCHED_TASK(update_precland),       8,     50 },
 #endif
 #if FRAME_CONFIG == HELI_FRAME
