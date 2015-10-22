@@ -1,23 +1,23 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
-#ifndef __AC_PRECLAND_IRLOCK_H__
-#define __AC_PRECLAND_IRLOCK_H__
+#ifndef __AC_PRECLAND_IRLOCK_SITL_H__
+#define __AC_PRECLAND_IRLOCK_SITL_H__
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
 #include <AC_PrecLand/AC_PrecLand_Backend.h>    // Precision Landing backend
-#include <AP_IRLock/AP_IRLock.h>
+//#include <AP_IRLock/AP_IRLock.h>
 
 /*
  * AC_PrecLand_IRLock - implements precision landing using target vectors provided
  *                         by a companion computer (i.e. Odroid) communicating via MAVLink
  */
 
-class AC_PrecLand_IRLock : public AC_PrecLand_Backend
+class AC_PrecLand_IRLock_SITL : public AC_PrecLand_Backend
 {
 public:
 
     // Constructor
-    AC_PrecLand_IRLock(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
+    AC_PrecLand_IRLock_SITL(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
 
     // init - perform any required initialisation of backend controller
     void init();
@@ -31,15 +31,13 @@ public:
     //  x_angle_rad : body-frame roll direction, positive = target is to right (looking down)
     //  y_angle_rad : body-frame pitch direction, postiive = target is forward (looking down)
     bool get_angle_to_target(float &x_angle_rad, float &y_angle_rad) const;
-    
+
     // GG Check if valid lock
     void check_lock();
-
+    
 private:
-    AP_IRLock_PX4 irlock;
-
+    //AP_IRLock_PX4 irlock;
     unsigned int _irlock_i;          // GG
-    uint32_t _last_update;        // GG
-
+    
 };
-#endif	// __AC_PRECLAND_IRLOCK_H__
+#endif	// __AC_PRECLAND_IRLOCK_SITL_H__

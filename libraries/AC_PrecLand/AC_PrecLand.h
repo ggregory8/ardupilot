@@ -14,10 +14,15 @@
 #define PRECLAND_IMAX                         500.0f    // velocity controller IMAX default
 #define PRECLAND_UPDATE_TIME                    0.02f   // precland runs at 50hz
 
+// GG Parameter defaults
+#define AC_PRECLAND_ALT_DEFAULT                 1500.f     // Default altitude to start using IR-Lock = 15m
+#define AC_PRECLAND_TIMEOUT_DEFAULT             2000.f     // Default time of no new signal from IR-Lock to losing fix
+
 // declare backend classes
 class AC_PrecLand_Backend;
 class AC_PrecLand_Companion;
 class AC_PrecLand_IRLock;
+class AC_PrecLand_IRLock_SITL;          // GG
 
 class AC_PrecLand
 {
@@ -25,6 +30,7 @@ class AC_PrecLand
     friend class AC_PrecLand_Backend;
     friend class AC_PrecLand_Companion;
     friend class AC_PrecLand_IRLock;
+    friend class AC_PrecLand_IRLock_SITL;
 
 public:
 
@@ -51,6 +57,15 @@ public:
 
     // healthy - returns true if precision landing is healthy
     bool healthy() { return _backend_state.healthy; }
+    
+    // GG return if have a lock
+    bool have_lock() { return _backend_state.locked; }
+    
+    // GG return if simulate lock on
+    bool get_sim() { return _backend_state.sim_lock; }
+    
+    // GG force lock on (SITL only)
+    void sim_lock(bool sim_state) { _backend_state.sim_lock = sim_state; }
 
     // update - give chance to driver to get updates from sensor
     void update(float alt_above_terrain_cm);
@@ -88,6 +103,10 @@ private:
     AP_Int8                     _type;              // precision landing controller type
     AP_Float                    _speed_xy;          // maximum horizontal speed in cm/s
 
+    // GG IR-Lock RTL code parameters
+    AP_Float                    _alt;               // Altitude to start checking irlock
+    AP_Float                    _timeout;           // Time before losing IR-Lock signal
+
     // internal variables
     float                       _dt;                // time difference (in seconds) between calls from the main program
 
@@ -102,6 +121,10 @@ private:
     // backend state
     struct precland_state {
         bool    healthy;
+        bool    locked;
+        bool    sim_lock;
+        float   timeout_ms;
+        uint32_t    last_update;
     } _backend_state;
     AC_PrecLand_Backend         *_backend;  // pointers to backend precision landing driver
 };

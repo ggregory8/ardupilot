@@ -20,14 +20,14 @@
  *      Author: MLandes
  */
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
+#include "AP_HAL/AP_HAL.h"
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
 #include "AP_IRLock_PX4.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "AP_HAL/AP_HAL.h"
 #include "drivers/drv_irlock.h"
 
 extern const AP_HAL::HAL& hal;

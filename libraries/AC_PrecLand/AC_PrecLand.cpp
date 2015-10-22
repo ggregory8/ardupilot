@@ -4,6 +4,7 @@
 #include <AC_PrecLand/AC_PrecLand_Backend.h>
 #include <AC_PrecLand/AC_PrecLand_Companion.h>
 #include <AC_PrecLand/AC_PrecLand_IRLock.h>
+#include <AC_PrecLand/AC_PrecLand_IRLock_SITL.h>         // Add SITL support
 
 extern const AP_HAL::HAL& hal;
 
@@ -27,6 +28,22 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] PROGMEM = {
     // @Range: 0 500
     // @User: Advanced
     AP_GROUPINFO("SPEED",   2, AC_PrecLand, _speed_xy, AC_PRECLAND_SPEED_XY_DEFAULT),
+    
+    // GG Added these for IRLOCK
+
+    // @Param: ALT
+    // @DisplayName: IR-Lock Check Altitude
+    // @Description: Altitude to descend to before checking for IR-Lock fix
+    // @Values: cm 
+    // @User: Advanced
+    AP_GROUPINFO("ALT", 3, AC_PrecLand, _alt, AC_PRECLAND_ALT_DEFAULT),
+
+    // @Param: TIMEOUT
+    // @DisplayName: IR-Lock Lost Beacon Timeout
+    // @Description: Time (ms) that we don't have becean signal before timing out and stopping IRLock land
+    // @Values: ms
+    // @User: Advanced
+    AP_GROUPINFO("TIMEOUT", 4, AC_PrecLand, _timeout, AC_PRECLAND_TIMEOUT_DEFAULT),
 
     AP_GROUPEND
 };
@@ -77,7 +94,11 @@ void AC_PrecLand::init()
             break;
         // IR Lock
         case PRECLAND_TYPE_IRLOCK:
+#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
             _backend = new AC_PrecLand_IRLock(*this, _backend_state);
+#else
+            _backend = new AC_PrecLand_IRLock_SITL(*this, _backend_state);
+#endif
             break;
     }
 
@@ -92,6 +113,9 @@ void AC_PrecLand::update(float alt_above_terrain_cm)
 {
     // run backend update
     if (_backend != NULL) {
+        // GG had to do this to get parameter into sub classes
+        _backend_state.timeout_ms = _timeout.get();
+
         // read from sensor
         _backend->update();
 
