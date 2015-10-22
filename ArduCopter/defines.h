@@ -192,6 +192,8 @@ enum RTLState {
     RTL_InitialClimb,
     RTL_ReturnHome,
     RTL_LoiterAtHome,
+    RTL_IRLockDescent,          // GG
+    RTL_IRLockLoiter,           // GG
     RTL_FinalDescent,
     RTL_Land
 };

@@ -797,6 +797,13 @@ private:
     void rtl_land_start();
     void rtl_land_run();
     float get_RTL_alt();
+    // GG added to support new RTM and extra IRLock functionality
+    void update_RTL_location();
+    void rtl_descent_irlock_start();
+    void rtl_descent_irlock_run();
+    void rtl_loiteratirlock_start();
+    void rtl_loiteratirlock_run();
+    
     bool sport_init(bool ignore_checks);
     void sport_run();
     bool stabilize_init(bool ignore_checks);
