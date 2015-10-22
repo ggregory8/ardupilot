@@ -105,6 +105,9 @@ public:
         k_param_channel_yaw = 200,
         k_param_channel_pitch,
 
+        // GG display debug messages
+        k_param_msg_debug = 210,
+
         //
         // 220: Waypoint data
         //
@@ -151,6 +154,9 @@ public:
     // PID controllers
     PID         pidPitch2Srv;
     PID         pidYaw2Srv;
+
+    // GG display debug messages
+    AP_Int8     msg_debug;
 
     Parameters() :
         pidPitch2Srv(0.2, 0, 0.05f, 4000.0f),

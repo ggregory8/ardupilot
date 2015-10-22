@@ -277,6 +277,12 @@ const AP_Param::Info Tracker::var_info[] PROGMEM = {
     // @User: Advanced
     GSCALAR(command_total,          "CMD_TOTAL",      0),
 
+    // @Param: MSG_DEBUG
+    // @DisplayName: Display debug messages
+    // @Description: Set to 1 to show debug messages.
+    // @Range: 0 1
+    // @User: Advanced
+    GSCALAR(msg_debug,          "MSG_DEBUG",      0),
 
     AP_VAREND
 };
