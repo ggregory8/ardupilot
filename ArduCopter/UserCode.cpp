@@ -11,6 +11,7 @@
  IR-Lock precision landing during RTL and LAND. Also allow RTL land pause and resume if lose and then gain IR-Lock fix
 
  Version History:
+ v2.02 Fix calculations for distance to moveable home (remove RTM location) and use AHRS home always
  v2.01 Add custom Battery failsafe code and GCS
  v2.00 Add custom LED (only) code to AC3.3
  v1.06 Add parameter IRLOCK_TIMEOUT to allow changing the IR-Lock fix timeout
@@ -74,14 +75,11 @@ static uint32_t irlock_rtl_pause_start_time = 0;
 /////////////////////////////////////////////////////////////////////////////////////
 // Defines/Variables for custom battery consumption firmware
 
-#define BATT_DEBUG					// Enable debug messages
+//#define BATT_DEBUG					// Enable debug messages
 #define BATT_DEBUG_COUNT 2000		// 2000 ~= 40s (in 50hz loop)
-
-static int32_t update_count;				// Used to create timing for debug messages
 
 static uint32_t takeoff_time;			// Time at takeoff (used to calculate average ma / second)
 static int32_t time_to_home_xy;			// Time (s) to fly home at average speed
-static int32_t time_to_home_z;			// Time (s) to fly home at average speed
 static int32_t time_to_fs;				// Time until failsafe occurs
 static float airborne_time;			// Time in air since takeoff (seconds)
 
@@ -103,7 +101,7 @@ static bool fs_batt_home_flag;
 //#define LED_QUADRANT_YAWTEST	// Test relay outputs using UAV yaw only (this would simulate home postion at North pole)
 
 // NOTE: We only use the two TTL output and pwm variants now
-//#define LED_QUADRANT_1			// Use 1 servo output to indicate direction to home from UAV bearing
+//#define LED_QUADRANT_1			// Use 1 PWM servo output to indicate direction to home from UAV bearing
 #define LED_QUADRANT_2			// Use two TTL outputs to indicate direction to home from UAV bearing
 // NOT USED NOW #define LED_QUADRANT_4			// Use four TTL outputs to indicate direction to home from UAV bearing
 
@@ -116,7 +114,8 @@ static bool fs_batt_home_flag;
 #define LED_SERVO_WEST 1400		// PWM value for West Quadrant
 
 // Variables for custom LED firmware
-static int32_t update_count_led;			// Used to create timing for debug messages
+static int32_t update_count;                // Used to create timing for Bingo debug messages
+static int32_t update_count_led;			// Used to create timing for LED debug messages
 static int32_t last_bearing_quadrant;		// Used to determine if the bearing quandrant has changed
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -129,13 +128,15 @@ void Copter::userhook_init()
     // this will be called once at start-up
 
 	// Initiase variables here
-    rtm_allow = false;            
+    //rtm_allow = false;            
 	rtm_update_location = false;  
 	//rtm_distance;                 
 	//rtm_bearing;                  
 	irlock_fix_last = false;      
 	irlock_rtl_pause = false;     
 	irlock_land_pause = false; 
+
+	land_repo_active_last = false;
 
 }
 #endif
@@ -155,6 +156,9 @@ void Copter::userhook_50Hz()
 	// Check whether we can resume RTL or LAND IR-Lock land from guided
 	check_rtl_resume();
 	check_land_resume();
+
+	// Retrieve state of IRLock device
+	irlock_blob_detected = precland.have_lock();
 
 	debug_irlock();
 
@@ -307,9 +311,9 @@ void Copter::custom_led()
 	if (update_count_led > 500)
 	{
 		gcs_send_text_fmt(PSTR("LED_QUAD hb: %d yaw: %d mav_home: %d"), rtm_bearing/100, ahrs.yaw_sensor/100, mav_to_rtm_bearing);
-		update_count = 0;
+		update_count_led = 0;
 	}
-	update_count = update_count + 1;
+	update_count_led = update_count_led + 1;
 #endif  // LED_QUADRANT_DEBUG
 
 }
@@ -322,17 +326,12 @@ void Copter::custom_led()
 // We then calculate how long (seconds) it will take to reach home from current location, and thus how many ma it will take
 // We can then predict when we should return home to allow a certain ma of battery left once landed at home
 
-// To Do:
+// Improvements:
 // Could give warning like 'Return home now to retain 30% battery'
 // Log battery capacity events to log file
 // If land we should reset takeoff flag so we can calculate fresh again
 void Copter::batt_consumption()
 {
-/*    // log battery info to the dataflash
-    if (should_log(MASK_LOG_CURRENT)) {
-        Log_Write_Current();
-        */
-
 	uint32_t tnow = hal.scheduler->millis();
 
 	// Record ma used at takeoff
@@ -472,7 +471,8 @@ void Copter::batt_consumption()
 	// For debugging, output the calculated values every ~ 40s
 	if (update_count == 1)
 	{
-		gcs_send_text_fmt(PSTR("Batt used: %.0fmah, %d%% - dist_home: %.0fm"), battery.current_total_mah(), battery.capacity_remaining_pct(), rtm_distance/100);
+		//gcs_send_text_fmt(PSTR("Batt used: %.0fmah, %d%% - dist_home: %.0fm"), battery.current_total_mah(), battery.capacity_remaining_pct(), rtm_distance/100);
+		gcs_send_text_fmt(PSTR("rtm_bearing: %.0f - dist_home: %.0fm"), rtm_bearing, rtm_distance/100);
 	}
 
 	if (update_count == 100)
@@ -497,13 +497,18 @@ void Copter::calc_rtm_distance_bearing()
     // get current location
     Vector3f curr = inertial_nav.get_position();
 	
+	// We DON'T USE THIS ANYMORE in AC3.3 as we are able to set home location
+#if 0    
 	// Set destination as default original takeoff location
-    Vector3f destination = Vector3f(0,0,0);
+    //Vector3f destination = Vector3f(0,0,0);
     
     // Only change to Return-to-me location if a valid new home position has been received
-    if (rtm_allow)
-        destination = pv_location_to_vector(rtm_loc);
-        
+    //if (rtm_allow)
+    //    destination = pv_location_to_vector(rtm_loc);
+#else    
+    // New for AC 3.3
+    Vector3f destination = pv_location_to_vector(ahrs.get_home());
+#endif
 
 	// Calculate distance to Return-to-me location
 	rtm_distance = pythagorous2(destination.x-curr.x,destination.y-curr.y);
@@ -530,7 +535,7 @@ void Copter::set_irlock_rtl_pause(bool pause_state)
 void Copter::check_rtl_resume()
 {
 	// get the current time
-    uint32_t now = hal.scheduler->millis();
+    //uint32_t now = hal.scheduler->millis();
 
 	if (!irlock_rtl_pause)
 		return;
@@ -591,7 +596,7 @@ void Copter::set_irlock_land_pause(bool pause_state)
 void Copter::check_land_resume()
 {
 	// get the current time
-    uint32_t now = hal.scheduler->millis();
+    //uint32_t now = hal.scheduler->millis();
 
 	if (!irlock_land_pause)
 		return;
@@ -619,17 +624,6 @@ void Copter::check_land_resume()
 
 void Copter::debug_irlock()
 {
-    //if (irlock.debug_bitmask2 & MASK_DEBUG_IRLOCK_STATE)
-    //{
-        //if (!last_irlock_state && irlock_blob_detected)
-        //    gcs_send_text_fmt(PSTR("IR-Lock Fix Aquired"));
-        
-        //if (last_irlock_state && !irlock_blob_detected)
-        //    gcs_send_text_fmt(PSTR("IR-Lock Fix Lost"));
-        
-        //gcs_send_text_fmt(PSTR("LED_QUAD hb: %d yaw: %d mav_home: %d"), rtm_bearing/100, ahrs.yaw_sensor/100, mav_to_rtm_bearing);
-    //}
-
     // IR-Lock Fix Aquired
     if (!last_irlock_state && irlock_blob_detected)
     {
@@ -645,4 +639,40 @@ void Copter::debug_irlock()
     }
     
     last_irlock_state = irlock_blob_detected;
+
+    // Full debug
+#if 0
+    if(precland.get_sim())
+    	gcs_send_text_fmt(PSTR("IR-Lock sim on"));
+    else
+    	gcs_send_text_fmt(PSTR("IR-Lock sim off"));
+
+	if(precland.have_lock())
+    	gcs_send_text_fmt(PSTR("IR-Lock lock on"));
+    else
+    	gcs_send_text_fmt(PSTR("IR-Lock lock off"));
+#endif
+
+    // Debug irlock loiter shift
+#if 0
+    static uint32_t debug_irlock_shift_counter = 0;
+
+    debug_irlock_shift_counter++;
+
+    //if (debug_irlock_shift_counter > 200 && irlock_blob_detected)
+    if (debug_irlock_shift_counter > 200)
+    {
+    	//Vector2f irlock_ef = precland.last_bf_angle_to_target();
+		//gcs_send_text_fmt(PSTR("GG earth frame: %f, %f"), irlock_ef.x, irlock_ef.y);	    	
+		Vector3f irlock_target_offset = precland.last_target_pos_offset();
+		gcs_send_text_fmt(PSTR("GG irlock_target_offset: %f, %f, %f"), irlock_target_offset.x, irlock_target_offset.y, irlock_target_offset.z);
+    	
+    	//gcs_send_text_fmt(PSTR("GG irlock update: %d, num_blocks: %d"), precland.get_last_update(), precland.get_num_blocks());	    	
+		//gcs_send_text_fmt(PSTR("GG irlock counters: %d, %d, %d"), precland.get_counter1(), precland.get_counter2(), precland.get_counter3());	    	
+
+    	//gcs_send_text_fmt(PSTR("GG shift: %f, %f, %f"), irlock_target_shift.x, irlock_target_shift.y, irlock_target_shift.z);
+    	debug_irlock_shift_counter = 0;
+    }
+#endif
+    	
 }
