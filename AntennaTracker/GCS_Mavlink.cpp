@@ -857,6 +857,8 @@ mission_failed:
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
         tracker.gcs[chan-MAVLINK_COMM_0].send_autopilot_version(FIRMWARE_VERSION);
+        //GG Also send my custom firmware version info
+        tracker.send_custom_version();
         break;
 
     } // end switch
