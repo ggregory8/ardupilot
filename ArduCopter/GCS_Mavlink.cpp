@@ -1206,11 +1206,19 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             // param6 : longitude
             // param7 : altitude (absolute)
             result = MAV_RESULT_FAILED; // assume failure
-            if(is_equal(packet.param1,1.0f) || (is_zero(packet.param5) && is_zero(packet.param6) && is_zero(packet.param7))) {
+            //if(is_equal(packet.param1,1.0f) || (is_zero(packet.param5) && is_zero(packet.param6) && is_zero(packet.param7))) {
+            // Only allow if param1 = 1
+            if(is_equal(packet.param1,1.0f)) {
                 if (copter.set_home_to_current_location_and_lock()) {
                     result = MAV_RESULT_ACCEPTED;
                 }
-            } else {
+            //} else {
+            }
+            // GG Change to only set location if == 0 (this allows my test code below to work)
+            //     Also add param1 == 7 option
+            if (is_equal(packet.param1,0.0f) || is_equal(packet.param1,7.0f))
+            {
+
                 // sanity check location
                 if (fabsf(packet.param5) > 90.0f || fabsf(packet.param6) > 180.0f) {
                     break;
@@ -1221,10 +1229,49 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 new_home_loc.alt = (int32_t)(packet.param7 * 100.0f);
                 if (!copter.far_from_EKF_origin(new_home_loc)) {
                     if (copter.set_home_and_lock(new_home_loc)) {
+                        // Also update the destination if RTL is active
+                        if (is_equal(packet.param1,7.0f) )
+                        {
+                            if (copter.control_mode == RTL) 
+                                copter.rtm_update_location = true;
+                        }
                         result = MAV_RESULT_ACCEPTED;
                     }
                 }
             }
+
+             ///////////////////////////////////////////////////////////
+            // GG Test code to allow faking irlock fix
+            //10 = set irlock blob to True
+            //11 = set irlock blob to False
+            
+            if (packet.param1 == 10.0f)
+            {
+                
+                if (copter.precland.healthy())
+                    //copter.gcs_send_text_fmt(PSTR("GG blob detected turn on, last_update: %d"), copter.precland.last_update());
+                    //copter.gcs_send_text_fmt(PSTR("GG blob detected turn on, last_update"));
+                    copter.irlock_blob_detected = true;
+                else
+                    //gcs_send_text_fmt(PSTR("GG no blob turn on, last_update: %d"), irlock.last_update());
+                    copter.irlock_blob_detected = true;
+                //copter.precland.lock_on();
+                copter.precland.sim_lock(true);
+                //irlock.simulate_fix(true);
+            }    
+
+            if (packet.param1 == 11.0f)
+            {
+                if (copter.irlock_blob_detected)
+                    //gcs_send_text_fmt(PSTR("GG blob detected turn off, last_update: %d"), irlock.last_update());
+                    copter.irlock_blob_detected = true;
+                else
+                    //gcs_send_text_fmt(PSTR("GG no blob turn off, last_update: %d"), irlock.last_update());
+                    copter.irlock_blob_detected = true;
+                copter.precland.sim_lock(false);
+                //irlock.simulate_fix(false);
+            } 
+
             break;
 
         case MAV_CMD_DO_FLIGHTTERMINATION:
