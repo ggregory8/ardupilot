@@ -43,7 +43,8 @@ const AP_Scheduler::Task Tracker::scheduler_tasks[] PROGMEM = {
     { SCHED_TASK(update_notify),          1,    100 },
     { SCHED_TASK(check_usb_mux),          5,    300 },
     { SCHED_TASK(gcs_retry_deferred),     1,   1000 },
-    { SCHED_TASK(one_second_loop),       50,   3900 }
+    { SCHED_TASK(one_second_loop),       50,   3900 },
+    { SCHED_TASK(user_code),             USER_CODE_RATE,   3900 }
 };
 
 /**
@@ -63,6 +64,9 @@ void Tracker::setup()
     AP_Notify::flags.failsafe_battery = false;
 
     init_tracker();
+
+    // GG setup user code
+    user_setup();
 
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks));

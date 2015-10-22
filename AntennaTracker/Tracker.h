@@ -71,6 +71,7 @@
 // Configuration
 #include "config.h"
 #include "defines.h"
+#include "gcs_led.h"
 
 #include "Parameters.h"
 #include <GCS_MAVLink/GCS.h>
@@ -187,7 +188,14 @@ private:
 
     static const AP_Scheduler::Task scheduler_tasks[];
     static const AP_Param::Info var_info[];
-
+    
+    ////////////////////////////////////////////////////////////////////////////////
+    // GG Custom GCS LED Variables
+    int32_t debug_count = 0;        // Used to create timing for debug messages
+    
+    bool gcs_led_matrix[GCS_LED_NUM_CASES][GCS_LED_NUM_OUTPUTS] = { GCS_LED_MATRIX_ARRAY };    // Matrix is defined in gcs_led.h
+    ////////////////////////////////////////////////////////////////////////////////
+    
     void one_second_loop();
     void send_heartbeat(mavlink_channel_t chan);
     void send_attitude(mavlink_channel_t chan);
@@ -247,7 +255,20 @@ private:
     void update_armed_disarmed();
     void gcs_send_text_fmt(const prog_char_t *fmt, ...);
     void init_capabilities(void);
-
+    // GG
+    void user_setup();
+    void user_code();
+    void led_init();
+    void led_code();
+    void set_led_pwm(int16_t pwm_value);
+    void set_led_matrix(int sector, int pitch_sector = 1);
+    void set_led_matrix_case(int case_num);
+    void led_below_45(int32_t rel_bearing);
+    void led_above_45(int32_t rel_bearing);
+    void gg_debug_usb_msg(const prog_char_t *fmt, ...);
+    void gg_debug_msg(const prog_char_t *fmt, ...);
+    void send_custom_version();
+    
 public:
     void mavlink_snoop(const mavlink_message_t* msg);
     void mavlink_delay_cb();

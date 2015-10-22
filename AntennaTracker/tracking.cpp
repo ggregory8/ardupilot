@@ -89,6 +89,8 @@ void Tracker::update_tracking(void)
         return;
     }
 
+// GG Disable normal servo control
+/*
     switch (control_mode) {
     case AUTO:
         update_auto();
@@ -107,6 +109,7 @@ void Tracker::update_tracking(void)
     case INITIALISING:
         break;
     }
+*/
 }
 
 /**
