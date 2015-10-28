@@ -2,8 +2,8 @@
 
 
 /*///////////////////////////////////////////////////////////////////////////////////
- Last Edited: 2015/09/29
- Version:     V1.06
+ Last Edited: 2015/10/22
+ Version:     V2.02
 
  Functionality:
  Custom LED code
@@ -28,6 +28,27 @@
  Notes:
  Add more comments to start of two main functions
  Are temp_1...3 variables needed
+
+
+///////////////////////////////////////////////////////////////////////////////////
+// Functions:
+
+// Turn TTL or PWM outputs on corresponding to correct direction to Home location
+void Copter::custom_led()
+// Calculate remaining flight time available to return time based on current usage. Trigger 'Bingo' RTL failsafe.
+void Copter::batt_consumption()
+// Calculate distance and bearing from vehicle to home location
+void Copter::calc_rtm_distance_bearing()
+// Used to set and disable IR-Lock RTL pause feature from other functions
+void Copter::set_irlock_rtl_pause(bool pause_state)
+// Check whether we can automatically switch back to RTL mode after attempting to land with IR-Lock and we lose fix so it switches to GUIDED
+void Copter::check_rtl_resume()
+// Used to set and disable IR-Lock LAND pause feature from other functions
+void Copter::set_irlock_land_pause(bool pause_state)
+// Check whether we can automatically switch back to LAND mode after attempting to land with IR-Lock and we lose fix so it switches to GUIDED
+void Copter::check_land_resume()
+// Debug IR-Lock state messages
+void Copter::debug_irlock()
 
 ///////////////////////////////////////////////////////////////////////////////////*/
 // Notes on Parameter Setup
@@ -191,6 +212,7 @@ void Copter::userhook_SuperSlowLoop()
 }
 #endif
 
+// Turn TTL or PWM outputs on corresponding to correct direction to Home location
 void Copter::custom_led()
 {
 	   
@@ -491,7 +513,7 @@ void Copter::batt_consumption()
 
 }
 
-// Similar code from navigation.pde & AC_WPNav.cpp to calculate distance to Return-to-me location
+// Calculate distance and bearing from vehicle to home location
 void Copter::calc_rtm_distance_bearing()
 {
     // get current location
