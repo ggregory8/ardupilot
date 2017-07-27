@@ -195,6 +195,12 @@ public:
         k_param_attitude_control,
         k_param_pos_control,
         k_param_circle_nav,     // 104
+        
+        // GG Battery Consumption Code
+        k_param_batt_avg_xy_ma = 105,
+        k_param_batt_avg_z_ma,
+        k_param_batt_home_warn,
+        k_param_batt_home_fs,
 
         // 110: Telemetry control
         //
@@ -499,6 +505,12 @@ public:
     AP_Float                autotune_aggressiveness;
     AP_Float                autotune_min_d;
 
+    //GG Battery Consumption Code
+    AP_Float                batt_avg_xy_ma;
+    AP_Float                batt_avg_z_ma;
+    AP_Float                batt_home_warn;
+    AP_Float                batt_home_fs;
+    
     // Note: keep initializers here in the same order as they are declared
     // above.
     Parameters() :

@@ -757,6 +757,11 @@ private:
     void userhook_MediumLoop();
     void userhook_SlowLoop();
     void userhook_SuperSlowLoop();
+    // GG Custom Code Functions
+    void custom_led();
+    void batt_consumption();
+    void calc_rtm_distance_bearing();
+
     void update_home_from_EKF();
     void set_home_to_current_location_inflight();
     bool set_home_to_current_location();

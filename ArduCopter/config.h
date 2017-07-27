@@ -676,6 +676,22 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// GG Battery Consumption Code
+//
+#ifndef BATT_AVG_XY_MA_DEFAULT
+ #define BATT_AVG_XY_MA_DEFAULT     0.0f
+#endif
+#ifndef BATT_AVG_Z_MA_DEFAULT
+ #define BATT_AVG_Z_MA_DEFAULT      0.0f
+#endif
+#ifndef BATT_HOME_WARN_DEFAULT
+ #define BATT_HOME_WARN_DEFAULT     120.0f
+#endif
+#ifndef BATT_HOME_FS_DEFAULT
+ #define BATT_HOME_FS_DEFAULT       500.f
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Developer Items
 //
 

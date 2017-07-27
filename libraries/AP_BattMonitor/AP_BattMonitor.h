@@ -115,6 +115,9 @@ public:
     bool overpower_detected() const;
     bool overpower_detected(uint8_t instance) const;
 
+    //GG Return total pack capacity
+    float capacity_pack_total() const { return _pack_capacity[0]; }
+
     static const struct AP_Param::GroupInfo var_info[];
 
 protected:
