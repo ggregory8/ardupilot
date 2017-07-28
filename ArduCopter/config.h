@@ -192,7 +192,7 @@
  # define FS_GCS                        DISABLED
 #endif
 #ifndef FS_GCS_TIMEOUT_MS
- # define FS_GCS_TIMEOUT_MS             5000    // gcs failsafe triggers after 5 seconds with no GCS heartbeat
+ # define FS_GCS_TIMEOUT_MS             30000    // gcs failsafe triggers after 5 (GG changed to 30) seconds with no GCS heartbeat
 #endif
 
 // Radio failsafe while using RC_override
