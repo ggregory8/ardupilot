@@ -2,15 +2,20 @@
 
 /*///////////////////////////////////////////////////////////////////////////////////
  Last Edited: 2015/10/22
- Version:     V2.02
+ Version:     V3.00
  Functionality:
- Custom LED code
+ Custom LED code (actually used to drive the Antenna)
  Custom battery consumption code - to initiate warning and then RTL to allow a return to home with sufficient battery
- IR-Lock precision landing during RTL and LAND. Also allow RTL land pause and resume if lose and then gain IR-Lock fix
+ N/A IR-Lock precision landing during RTL and LAND. Also allow RTL land pause and resume if lose and then gain IR-Lock fix
  
  Version History:
- V3.00 Imported from evn_all_irlock2 branch on github
+ V3.00 (20170728)
+    Imported from evn_all_irlock2 branch on github
         - Remove irlock code
+        - Update default value for BATT_HOME_FS parameter to 1000mah
+    Add EV_ANT_MSG parameter to enable/disable sending LED direction update info message to GCS (this is used in GCS to update graphics)
+    Add EV_ANT_AUX_PIN parameter to allow changing whic AUX pin to use for PWM output
+    Add EV_ROI_YAW_HOLD parameter which enables and sets the UAV face/side to always point to ROI (Home)
 
  v2.02 Fix calculations for distance to moveable home (remove RTM location) and use AHRS home always
  v2.01 Add custom Battery failsafe code and GCS
@@ -68,6 +73,7 @@ RELAY_PIN = 54                  Relay1 is mapped to pin 54 (Aux5)
 RELAY_PIN2 = 55                 Relay2 is mapped to pin 55 (Aux6)
 RELAY_PIN3 = -1                 Relay3 is not used
 RELAY_PIN4 = -1                 Relay4 is not used
+
 Outputs Names:
 Chan  | PWM  |  Relay Pin
 --------------------------
@@ -105,27 +111,33 @@ static bool fs_batt_home_flag;
 /////////////////////////////////////////////////////////////////////////////////////
 // Defines/Variables for custom LED firmware
 
-//#define LED_QUADRANT_DEBUG        // Enable debug messages every 3.3s
-//#define LED_QUADRANT_STATUS       // Enable debug messages every 3.3s
-//#define LED_QUADRANT_YAWTEST  // Test relay outputs using UAV yaw only (this would simulate home postion at North pole)
+#define LED_QUADRANT_DEBUG          // Enable debug messages every 3.3s  (only if EV_ANT_MSG parameter >= 2)
+#define LED_QUADRANT_STATUS         // Enable status messages on change of direction output (only if EV_ANT_MSG parameter == 1)
+//#define LED_QUADRANT_YAWTEST        // Test relay outputs using UAV yaw only (this would simulate home postion at North pole)
+#define ROI_YAW_HOLD_DEBUG          // Enabled ROI Yaw Hold debug messages every 3.3 (only if EV_ANT_MSG parameter >= 2)
 
 // NOTE: We only use the two TTL output and pwm variants now
 //#define LED_QUADRANT_1            // Use 1 PWM servo output to indicate direction to home from UAV bearing
-#define LED_QUADRANT_2          // Use two TTL outputs to indicate direction to home from UAV bearing
+#define LED_QUADRANT_2              // Use two TTL outputs to indicate direction to home from UAV bearing
 // NOT USED NOW #define LED_QUADRANT_4          // Use four TTL outputs to indicate direction to home from UAV bearing
 
-#define LED_SERVO_RC 10         // Servo output to use i.e 9 = AUX1 ... 14 = AUX6 (AUX5 or AUX6 aren't working).
+//#define LED_SERVO_RC 10             // Servo output to use i.e 9 = AUX1 ... 14 = AUX6 (AUX5 or AUX6 aren't working). (depreciated now with Parameter EV_ANT_AUX_PIN)
 // Make sure the corresponding RC*_FUNCTION = 0 and BRD_PWM_COUNT parameter is correct depending which servo output you are using
 // ServoRelayEvents.do_set_servo(channel, period_us) - For some reason the below PWM values are not what Evangelos is getting
-#define LED_SERVO_NORTH 1100    // PWM value for North Quadrant
-#define LED_SERVO_EAST 1200     // PWM value for East Quadrant
-#define LED_SERVO_SOUTH 1300    // PWM value for South Quadrant
-#define LED_SERVO_WEST 1400     // PWM value for West Quadrant
+#define LED_SERVO_NORTH 1100        // PWM value for North Quadrant
+#define LED_SERVO_EAST 1200         // PWM value for East Quadrant
+#define LED_SERVO_SOUTH 1300        // PWM value for South Quadrant
+#define LED_SERVO_WEST 1400         // PWM value for West Quadrant
 
 // Variables for custom LED firmware
 static int32_t update_count;                // Used to create timing for Bingo debug messages
 static int32_t update_count_led;            // Used to create timing for LED debug messages
+static int32_t update_count_roi;            // Used to create timing for ROI debug messages TODO could use same counter as above and have it always enabled?
 static int32_t last_bearing_quadrant;       // Used to determine if the bearing quandrant has changed
+int16_t ant_pwm_aux_pin = 14;
+int16_t last_ant_aux_pin;   // Testing 
+bool roi_yaw_hold_enabled =  false;         // ROI Yaw hold mode enabled via parameter EV_ROI_YAW_HOLD
+bool roi_yaw_hold_active =  false;          // ROI Yaw hold mode activated i.e it is enabled and in correct control mode (AUTO or GUIDED)
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -163,6 +175,9 @@ void Copter::userhook_50Hz()
 
     batt_consumption();
     custom_led();
+
+    // Keep updating UAV ROI yaw target
+    update_roi_yaw_target();
 }
 #endif
 
@@ -190,7 +205,45 @@ void Copter::userhook_SuperSlowLoop()
 // Turn TTL or PWM outputs on corresponding to correct direction to Home location
 void Copter::custom_led()
 {
-       
+    //int16_t ant_pwm_aux_pin = 14;
+
+    // Update AUX pin for PWM Output
+    switch(g.ev_ant_aux_pin) {
+        case 1:
+            // AUX 1 = pin 9
+            ant_pwm_aux_pin = 9;
+            break;
+        case 2:
+            // AUX 2 = pin 10
+            ant_pwm_aux_pin = 10;
+            break;
+        case 3:
+            // AUX 3 = pin 11
+            ant_pwm_aux_pin = 11;
+            break;
+        case 4:
+            // AUX 4 = pin 12
+            ant_pwm_aux_pin = 12;
+            break;
+        case 5:
+            // AUX 5 = pin 13
+            ant_pwm_aux_pin = 13;
+            break;
+        case 6:
+            // AUX 6 = pin 14
+            ant_pwm_aux_pin = 14;
+            break;
+        default:
+            // Any other value use AUX 6
+            //  TODO: Could use other values to set other modes
+            ant_pwm_aux_pin = 14;
+            break;
+    }
+    //if (g.ev_ant_aux_pin != last_ant_aux_pin) {
+    //    gcs_send_text_fmt(MAV_SEVERITY_INFO, "ANT_AUX_PIN changed from AUX %d to %d.", last_ant_aux_pin, int16_t(g.ev_ant_aux_pin));
+    //    last_ant_aux_pin = g.ev_ant_aux_pin;        
+    //}
+
 #ifdef LED_QUADRANT_YAWTEST
     // For testing use only the current yaw angle to drive the outputs
     int32_t mav_to_rtm_bearing = (360-ahrs.yaw_sensor)/100;
@@ -207,7 +260,9 @@ void Copter::custom_led()
     if ((mav_to_rtm_bearing >= 315 or mav_to_rtm_bearing < 45) and last_bearing_quadrant != 1)
     {
 #ifdef LED_QUADRANT_STATUS
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating North LED. Bearing to home: %d", mav_to_rtm_bearing);
+        if (g.ev_ant_msg >= 1) {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating North LED. Bearing to home: %d", mav_to_rtm_bearing);  
+        }
 #endif  // LED_QUADRANT_STATUS
 
 #ifdef LED_QUADRANT_4   
@@ -223,7 +278,7 @@ void Copter::custom_led()
 #endif  // LED_QUADRANT_2
 
 #ifdef LED_QUADRANT_1   
-        ServoRelayEvents.do_set_servo(LED_SERVO_RC, LED_SERVO_NORTH);   // Servo1 (RC9 = AUX1)
+        ServoRelayEvents.do_set_servo(ant_pwm_aux_pin, LED_SERVO_NORTH);   // Servo1 (RC9 = AUX1)
 #endif  // LED_QUADRANT_1
 
         last_bearing_quadrant = 1;
@@ -232,7 +287,9 @@ void Copter::custom_led()
     if (mav_to_rtm_bearing >= 45 and mav_to_rtm_bearing < 135 and last_bearing_quadrant != 2)
     {
 #ifdef LED_QUADRANT_STATUS
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating East LED. Bearing to home: %d", mav_to_rtm_bearing);
+        if (g.ev_ant_msg >= 1) {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating East LED. Bearing to home: %d", mav_to_rtm_bearing);
+        }
 #endif // LED_QUADRANT_STATUS
 
 #ifdef LED_QUADRANT_4
@@ -248,7 +305,7 @@ void Copter::custom_led()
 #endif  // LED_QUADRANT_2
 
 #ifdef LED_QUADRANT_1   
-        ServoRelayEvents.do_set_servo(LED_SERVO_RC, LED_SERVO_EAST);    // Servo1 (RC9 = AUX1)
+        ServoRelayEvents.do_set_servo(ant_pwm_aux_pin, LED_SERVO_EAST);    // Servo1 (RC9 = AUX1)
 #endif  // LED_QUADRANT_1
         last_bearing_quadrant = 2;
     }
@@ -256,7 +313,9 @@ void Copter::custom_led()
     if (mav_to_rtm_bearing >= 135 and mav_to_rtm_bearing < 225 and last_bearing_quadrant != 3)
     {
 #ifdef LED_QUADRANT_STATUS
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating South LED. Bearing to home: %d", mav_to_rtm_bearing);
+        if (g.ev_ant_msg >= 1) {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating South LED. Bearing to home: %d", mav_to_rtm_bearing);
+        }
 #endif // LED_QUADRANT_STATUS
 
 #ifdef LED_QUADRANT_4
@@ -272,7 +331,7 @@ void Copter::custom_led()
 #endif  // LED_QUADRANT_2
 
 #ifdef LED_QUADRANT_1   
-        ServoRelayEvents.do_set_servo(LED_SERVO_RC, LED_SERVO_SOUTH);   // Servo1 (RC9 = AUX1)
+        ServoRelayEvents.do_set_servo(ant_pwm_aux_pin, LED_SERVO_SOUTH);   // Servo1 (RC9 = AUX1)
 #endif  // LED_QUADRANT_1
 
         last_bearing_quadrant = 3;
@@ -281,7 +340,9 @@ void Copter::custom_led()
     if (mav_to_rtm_bearing >= 225 and mav_to_rtm_bearing < 315 and last_bearing_quadrant != 4)
     {
 #ifdef LED_QUADRANT_STATUS
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating West LED. Bearing to home: %d", mav_to_rtm_bearing);
+        if (g.ev_ant_msg >= 1) {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "Activating West LED. Bearing to home: %d", mav_to_rtm_bearing);
+        }
 #endif // LED_QUADRANT_STATUS
 
 #ifdef LED_QUADRANT_4
@@ -297,18 +358,25 @@ void Copter::custom_led()
 #endif  // LED_QUADRANT_2
 
 #ifdef LED_QUADRANT_1   
-        ServoRelayEvents.do_set_servo(LED_SERVO_RC, LED_SERVO_WEST);    // Servo1 (RC9 = AUX1)
+        ServoRelayEvents.do_set_servo(ant_pwm_aux_pin, LED_SERVO_WEST);    // Servo1 (RC9 = AUX1)
 #endif  // LED_QUADRANT_1
 
         last_bearing_quadrant = 4;
     }
 
 #ifdef LED_QUADRANT_DEBUG
-    // For debugging output the calculated values every ~ 3.3s
-    if (update_count_led > 500)
-    {
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "LED_QUAD hb: %d yaw: %d mav_home: %d", rtm_bearing/100, ahrs.yaw_sensor/100, mav_to_rtm_bearing);
-        update_count_led = 0;
+    // Use parameter to control if status messages are displayed
+    // TODO: Could start using bits similar to below
+    // if ((g.throttle_behavior & THR_BEHAVE_HIGH_THROTTLE_CANCELS_LAND) != 0 && rc_throttle_control_in_filter.get() > LAND_CANCEL_TRIGGER_THR){
+    if (g.ev_ant_msg >= 2) {
+        // For debugging output the calculated values every ~ 3.3s (count of 500)
+        if (update_count_led > 500)
+        {
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "LED_QUAD hb: %d yaw: %d mav_home: %d", int16_t(rtm_bearing/100), int16_t(ahrs.yaw_sensor/100), int16_t(mav_to_rtm_bearing));
+            // gcs_send_text_fmt(MAV_SEVERITY_INFO, "EV_ANT_MSG: %d.", int16_t(g.ev_ant_msg));
+            // gcs_send_text_fmt(MAV_SEVERITY_INFO, "EV_ANT_AUX_PIN: %d = pin: %d", int16_t(g.ev_ant_msg), ant_pwm_aux_pin);
+            update_count_led = 0;
+        }
     }
     update_count_led = update_count_led + 1;
 #endif  // LED_QUADRANT_DEBUG
@@ -525,4 +593,121 @@ void Copter::calc_rtm_distance_bearing()
     // Get bearing in centi-degrees
     rtm_bearing = pv_get_bearing_cd(curr, destination);
 
+}
+
+/*
+Continually update the UAV yaw to get facing the ROI (home) - Only in LOITER, AUTO and GUIDED
+- Calculate the heading the UAV should be as fast as posible
+- update set_auto_yaw_look_at_heading()
+- Make sure auto_yaw_mode is set
+Parameters:
+EV_ROI_YAW_HOLD: -1 = disabled, 0 - 359 = Side of UAV to face the ROI (home)
+*/
+void Copter::update_roi_yaw_target() {
+    // Side of UAV to always point to the ROI in degrees.
+    float mav_roi_face = 0.0f;
+
+    // Confirm parameter is with limits
+    if ( g.ev_roi_yaw_hold >= 0.0f and g.ev_roi_yaw_hold < 359.9f ) {
+        if (!roi_yaw_hold_enabled) {
+            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "ROI Yaw Hold Mode Enabled.");
+            //Log_Write_Data(103, (float)g.ev_roi_yaw_hold);
+        }
+        roi_yaw_hold_enabled = true;
+        // Side of UAV to always point to the ROI in degrees.
+        mav_roi_face = g.ev_roi_yaw_hold;
+    } else {
+        if (roi_yaw_hold_enabled) {
+            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "ROI Yaw Hold Mode Disabled.");
+        }
+        // Return yaw mode to default
+        if ( control_mode == LOITER ) {
+            // If in  LOITER force to AUTO_YAW_HOLD as we now check this condition in the loiter_run() controller to allow it to read pilot yaw input
+            set_auto_yaw_mode(AUTO_YAW_HOLD);
+        } else {
+            set_auto_yaw_mode(get_default_auto_yaw_mode(false));
+        }
+        roi_yaw_hold_enabled = false;
+        roi_yaw_hold_active = false;
+    }
+
+    // get current location
+    Vector3f curr = inertial_nav.get_position();
+
+    Vector3f destination = pv_location_to_vector(ahrs.get_home());
+
+    // Calculate distance to the ROI (home)location
+    //GG TODO  rtm_distance = pythagorous2(destination.x-curr.x,destination.y-curr.y);
+    float roi_distance = norm(destination.x-curr.x,destination.y-curr.y);
+
+    // Get bearing in centi-degrees to home adn convert to degrees
+    float roi_bearing = pv_get_bearing_cd(curr, destination)/100.0f;
+
+    // Calculate the target MAV yaw to have the desired face/side facing the ROI (home)
+    float mav_roi_target_yaw = roi_bearing - mav_roi_face;
+
+    if ( roi_yaw_hold_enabled ) {
+        //STABILIZE, RTL
+        //if (control_mode == (STABILIZE or AUTO or GUIDED)) {
+        if ( control_mode == AUTO or control_mode == GUIDED or control_mode == LOITER ) {
+            if (!roi_yaw_hold_active) {
+                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "ROI Yaw Hold Mode Activated.");
+            }
+            //set_auto_yaw_look_at_heading(float angle_deg, float turn_rate_dps, int8_t direction, bool relative_angle)
+            set_auto_yaw_look_at_heading(mav_roi_target_yaw, 2.0f, 0, false);
+            set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
+            roi_yaw_hold_active =  true;
+        } else {
+            if (roi_yaw_hold_active) {
+                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "ROI Yaw Hold Mode De-Activated.");
+            }
+            // Return yaw mode to default
+            set_auto_yaw_mode(get_default_auto_yaw_mode(false));
+            roi_yaw_hold_active = false;
+        }
+        roi_yaw_hold_enabled =  true;
+    }
+
+    // Normalize in case over rollover to negative bearing
+    if (mav_roi_target_yaw < 0.0f)
+        mav_roi_target_yaw = mav_roi_target_yaw + 360.0f;
+
+#ifdef ROI_YAW_HOLD_DEBUG
+    if (g.ev_ant_msg >= 2) {
+        // For debugging output the calculated values every ~ 3.3s (count of 500)
+        if (update_count_roi > 500)
+        {
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "mav_to_roi_bearing: %d - dist_roi: %.0fm", mav_to_roi_bearing, roi_distance/100);
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "g.ev_roi_yaw_hold: %.0f", g.ev_roi_yaw_hold);
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "auto_yaw_mode: %d, AUTO_YAW_HOLD: %d", auto_yaw_mode, AUTO_YAW_HOLD);
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "get_default_auto_yaw_mode: %.0f, %d", get_default_auto_yaw_mode(false), get_default_auto_yaw_mode(false));
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "ROI_YAW_HOLD: roi_bearing: %.0f, mav_roi_face: %.0f", roi_bearing, mav_roi_face);
+            gcs_send_text_fmt(MAV_SEVERITY_INFO, "ROI_YAW_HOLD: mav_roi_target_yaw: %.0f", mav_roi_target_yaw);
+
+            update_count_roi = 0;
+        }
+        update_count_roi = update_count_roi + 1;
+    }
+#endif
+
+    /*
+    Log Data to file
+    id > 100 = our custom messages
+    Log_Write_Error(ERROR_SUBSYSTEM_NAVIGATION, ERROR_CODE_FAILED_CIRCLE_INIT);
+    Log_Write_Event(DATA_EKF_YAW_RESET);
+    Log_Write_Data(DATA_INIT_SIMPLE_BEARING, ahrs.yaw_sensor);
+
+    */
+
+    /*
+    Test LOITER
+    RC 1 1200 - Left
+    RC 1 1800 - Right
+    RC 2 1200 - Forwards
+    RC 2 1800 - Backwards
+    RC 3 1200 - Down
+    RC 3 1800 - Up
+    RC 4 1200 - Yaw Left
+    RC 4 1800 - Yaw Right
+    */
 }

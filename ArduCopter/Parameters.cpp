@@ -982,7 +982,28 @@ const AP_Param::Info Copter::var_info[] = {
     // @Values: ma 
     // @User: Advanced
     GSCALAR(batt_home_fs,  "BATT_HOME_FS",    BATT_HOME_FS_DEFAULT),
-    
+
+    // @Param: EV_ANT_MSG
+    // @DisplayName: Antenna Direction Message
+    // @Description: Send antenna direction information message to GCS
+    // @Values:  
+    // @User: Advanced
+    GSCALAR(ev_ant_msg,  "EV_ANT_MSG",    EV_ANT_MSG_DEFAULT),
+
+    // @Param: EV_ANT_AUX_PIN
+    // @DisplayName: Antenna Direction PWM Pin
+    // @Description: Aux pin used for antenna direction PWM output
+    // @Values:  
+    // @User: Advanced
+    GSCALAR(ev_ant_aux_pin,  "EV_ANT_AUX_PIN",    EV_ANT_AUX_PIN_DEFAULT),
+
+    // @Param: EV_ROI_YAW_HOLD
+    // @DisplayName: ROI Yaw Hold Angle
+    // @Description: ROI Yaw Hold - MAV face/side to direct to ROI (degrees)
+    // @Values: (degrees) -1 = Disabled, 0 - 359 = face of uav to direct to ROI
+    // @User: Advanced
+    GSCALAR(ev_roi_yaw_hold,  "EV_ROI_YAW_HOLD",    EV_ROI_YAW_HOLD_DEFAULT),
+
     AP_VAREND
 };
 

@@ -688,7 +688,20 @@
  #define BATT_HOME_WARN_DEFAULT     120.0f
 #endif
 #ifndef BATT_HOME_FS_DEFAULT
- #define BATT_HOME_FS_DEFAULT       500.f
+ #define BATT_HOME_FS_DEFAULT       1000.f
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
+// GG Custom Parameters
+//
+#ifndef EV_ANT_MSG_DEFAULT
+ #define EV_ANT_MSG_DEFAULT         1
+#endif
+#ifndef EV_ANT_AUX_PIN_DEFAULT
+ #define EV_ANT_AUX_PIN_DEFAULT     6
+#endif
+#ifndef EV_ROI_YAW_HOLD_DEFAULT
+ #define EV_ROI_YAW_HOLD_DEFAULT    -1.0
 #endif
 
 //////////////////////////////////////////////////////////////////////////////

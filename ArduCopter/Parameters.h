@@ -223,6 +223,13 @@ public:
         k_param_gcs_pid_mask,    // 126
 
         //
+        // GG Custom Parameters
+        //
+        k_param_ev_ant_msg = 127,
+        k_param_ev_ant_aux_pin,
+        k_param_ev_roi_yaw_hold,
+
+        //
         // 135 : reserved for Solo until features merged with master
         //
         k_param_rtl_speed_cms = 135,
@@ -510,6 +517,12 @@ public:
     AP_Float                batt_avg_z_ma;
     AP_Float                batt_home_warn;
     AP_Float                batt_home_fs;
+
+    // GG Custom parameters
+    AP_Int16                ev_ant_msg;
+    AP_Int16                ev_ant_aux_pin;
+    AP_Float                ev_roi_yaw_hold;
+
     
     // Note: keep initializers here in the same order as they are declared
     // above.

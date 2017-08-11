@@ -161,8 +161,18 @@ void Copter::loiter_run()
         // run loiter controller
         wp_nav.update_loiter(ekfGndSpdLimit, ekfNavVelGainScaler);
 
+        // GG Copy guided mode where we option whether the operator can control yaw
         // call attitude controller
-        attitude_control.input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate, get_smoothing_gain());
+        if (auto_yaw_mode == AUTO_YAW_HOLD) {
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "Loiter_run 1- target_yaw_rate: %f", target_yaw_rate);
+            // GG Original controller call
+            // roll & pitch from waypoint controller, yaw rate from pilot
+            attitude_control.input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate, get_smoothing_gain());
+        }else{
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "Loiter_run 2- target_yaw_rate: %f", target_yaw_rate);
+            // roll, pitch from waypoint controller, yaw heading from auto_heading()
+            attitude_control.input_euler_angle_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_auto_heading(), true, get_smoothing_gain());
+        }
 
         // adjust climb rate using rangefinder
         if (rangefinder_alt_ok()) {
