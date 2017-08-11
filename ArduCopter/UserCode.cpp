@@ -647,9 +647,12 @@ void Copter::update_roi_yaw_target() {
     float mav_roi_target_yaw = roi_bearing - mav_roi_face;
 
     if ( roi_yaw_hold_enabled ) {
-        //STABILIZE, RTL
-        //if (control_mode == (STABILIZE or AUTO or GUIDED)) {
-        if ( control_mode == AUTO or control_mode == GUIDED or control_mode == LOITER ) {
+        // if AUTO, GUIDED, LOITER, RTL and POSHOLD and not taking off or landing then implement ROI Yaw Hold Function
+        //if ( control_mode == AUTO or control_mode == GUIDED or control_mode == RTL or control_mode == LOITER or control_mode == POS_HOLD) {
+        if (control_mode == GUIDED || control_mode == LOITER || control_mode == POSHOLD ||
+            (control_mode == RTL && (rtl_state == RTL_InitialClimb || rtl_state == RTL_ReturnHome)) ||
+            (control_mode == AUTO && (auto_mode != Auto_Land && auto_mode != Auto_TakeOff)) ) {
+
             if (!roi_yaw_hold_active) {
                 gcs_send_text_fmt(MAV_SEVERITY_WARNING, "ROI Yaw Hold Mode Activated.");
             }
