@@ -458,6 +458,7 @@ public:
         return _singleton;
     }
 
+    void send_text(MAV_SEVERITY severity, const char *fmt, ...);
     virtual void send_statustext(MAV_SEVERITY severity, uint8_t dest_bitmask, const char *text);
     void service_statustext(void);
 

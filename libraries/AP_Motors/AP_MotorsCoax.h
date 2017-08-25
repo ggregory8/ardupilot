@@ -61,6 +61,6 @@ protected:
     float               _thrust_yt_cw;
     SRV_Channel         *_servo1;
     SRV_Channel         *_servo2;
-    SRV_Channel         *_servo3;
-    SRV_Channel         *_servo4;
+   // SRV_Channel         *_servo3;
+   // SRV_Channel         *_servo4;
 };

@@ -172,6 +172,17 @@ void Copter::setup()
 
     init_ardupilot();
 
+    // GG Custom Coax Code
+    hal.gpio->pinMode(50, HAL_GPIO_INPUT);
+    hal.gpio->pinMode(51, HAL_GPIO_INPUT);
+    hal.gpio->pinMode(52, HAL_GPIO_OUTPUT);
+    hal.gpio->pinMode(53, HAL_GPIO_OUTPUT);
+
+    hal.gpio -> write(50, 1);
+    hal.gpio -> write(51, 1);
+    hal.gpio -> write(52, 1);
+    hal.gpio -> write(53, 1);
+
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks));
 
@@ -474,6 +485,20 @@ void Copter::three_hz_loop()
 
     // update ch6 in flight tuning
     tuning();
+
+    // GG Custom  Coax Code
+    if ( (int16_t)(RC_Channels::rc_channel(CH_8)->get_control_in()) < (int16_t)10) {
+
+        kill_switch_counter++;
+
+        if (kill_switch_counter >= 2 ) {
+            init_disarm_motors();
+            kill_switch_counter =0;
+        }
+    } else { 
+        kill_switch_counter = 0;
+    }
+
 }
 
 // one_hz_loop - runs at 1Hz

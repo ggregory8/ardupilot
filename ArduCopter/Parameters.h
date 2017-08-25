@@ -197,6 +197,12 @@ public:
         k_param_pos_control,
         k_param_circle_nav,     // 104
 
+        // GG Battery Consumption Code
+        k_param_batt_avg_xy_ma = 105,
+        k_param_batt_avg_z_ma,
+        k_param_batt_home_warn,
+        k_param_batt_home_fs,
+
         // 110: Telemetry control
         //
         k_param_gcs0 = 110,
@@ -216,6 +222,13 @@ public:
         k_param_takeoff_trigger_dz,
         k_param_gcs3,
         k_param_gcs_pid_mask,    // 126
+
+        //
+        // GG Custom Parameters
+        //
+        k_param_ev_ant_msg = 127,
+        k_param_ev_ant_aux_pin,
+        k_param_ev_roi_yaw_hold,
 
         //
         // 135 : reserved for Solo until features merged with master
@@ -483,6 +496,17 @@ public:
     AP_Int8                 autotune_axis_bitmask;
     AP_Float                autotune_aggressiveness;
     AP_Float                autotune_min_d;
+
+    //GG Battery Consumption Code
+    AP_Float                batt_avg_xy_ma;
+    AP_Float                batt_avg_z_ma;
+    AP_Float                batt_home_warn;
+    AP_Float                batt_home_fs;
+
+    // GG Custom parameters
+    AP_Int16                ev_ant_msg;
+    AP_Int16                ev_ant_aux_pin;
+    AP_Float                ev_roi_yaw_hold;
 
     // Note: keep initializers here in the same order as they are declared
     // above.

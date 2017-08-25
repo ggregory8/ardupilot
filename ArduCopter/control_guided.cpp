@@ -408,7 +408,7 @@ void Copter::guided_pos_control_run()
     if (!failsafe.radio) {
         // get pilot's desired yaw rate
         target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-        if (!is_zero(target_yaw_rate)) {
+        if (!is_zero(target_yaw_rate) && !roi_yaw_hold_active) {
             set_auto_yaw_mode(AUTO_YAW_HOLD);
         }
     }
@@ -424,9 +424,11 @@ void Copter::guided_pos_control_run()
 
     // call attitude controller
     if (auto_yaw_mode == AUTO_YAW_HOLD) {
+        //gcs_send_text_fmt(MAV_SEVERITY_INFO, "guided_pos_control_run 1- target_yaw_rate: %f", target_yaw_rate);
         // roll & pitch from waypoint controller, yaw rate from pilot
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), target_yaw_rate, get_smoothing_gain());
-    }else{
+    } else {
+        //gcs_send_text_fmt(MAV_SEVERITY_INFO, "guided_pos_control_run 2- get_auto_heading: %f", get_auto_heading());
         // roll, pitch from waypoint controller, yaw heading from auto_heading()
         attitude_control->input_euler_angle_roll_pitch_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), get_auto_heading(), true, get_smoothing_gain());
     }

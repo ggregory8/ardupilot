@@ -887,7 +887,57 @@ const AP_Param::Info Copter::var_info[] = {
     // @Group: 
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
-    
+
+    // GG Battery Consumption Code
+    // @Param: BATT_AVG_XY_MA
+    // @DisplayName: Average XY Battery Consumption
+    // @Description: Average battery consumption when flying horizontal. 0 = Auto-calculate
+    // @Values: ma/s, 0:Auto Calculate 
+    // @User: Advanced
+    GSCALAR(batt_avg_xy_ma,  "BATT_AVG_XY_MA",    BATT_AVG_XY_MA_DEFAULT),
+
+    // @Param: BATT_AVG_Z_MA
+    // @DisplayName: Average Z Battery Consumption
+    // @Description: Average battery consumption when flying vertical. 0 = use BATT_AVG_XY_MA
+    // @Values: ma/s, 0:Use BATT_AVG_XY_MA
+    // @User: Advanced
+    GSCALAR(batt_avg_z_ma,  "BATT_AVG_Z_MA",    BATT_AVG_Z_MA_DEFAULT),
+
+    // @Param: BATT_HOME_WARN
+    // @DisplayName: Battery Distance Warning
+    // @Description: Warning time for low battery to return home
+    // @Values: s 
+    // @User: Advanced
+    GSCALAR(batt_home_warn,  "BATT_HOME_WARN",    BATT_HOME_WARN_DEFAULT),
+
+    // @Param: BATT_HOME_FS
+    // @DisplayName: Battery Distance Failsafe
+    // @Description: Activate battery distance failsafe and RTL
+    // @Values: ma 
+    // @User: Advanced
+    GSCALAR(batt_home_fs,  "BATT_HOME_FS",    BATT_HOME_FS_DEFAULT),
+
+    // @Param: EV_ANT_MSG
+    // @DisplayName: Antenna Direction Message
+    // @Description: Send antenna direction information message to GCS
+    // @Values:  
+    // @User: Advanced
+    GSCALAR(ev_ant_msg,  "EV_ANT_MSG",    EV_ANT_MSG_DEFAULT),
+
+    // @Param: EV_ANT_AUX_PIN
+    // @DisplayName: Antenna Direction PWM Pin
+    // @Description: Aux pin used for antenna direction PWM output
+    // @Values:  
+    // @User: Advanced
+    GSCALAR(ev_ant_aux_pin,  "EV_ANT_AUX_PIN",    EV_ANT_AUX_PIN_DEFAULT),
+
+    // @Param: EV_ROI_YAW_HOLD
+    // @DisplayName: ROI Yaw Hold Angle
+    // @Description: ROI Yaw Hold - MAV face/side to direct to ROI (degrees)
+    // @Values: (degrees) -1 = Disabled, 0 - 359 = face of uav to direct to ROI
+    // @User: Advanced
+    GSCALAR(ev_roi_yaw_hold,  "EV_ROI_YAW_HOLD",    EV_ROI_YAW_HOLD_DEFAULT),
+
     AP_VAREND
 };
 

@@ -531,7 +531,17 @@ void Copter::poshold_run()
         poshold.pitch = constrain_int16(poshold.pitch, -aparm.angle_max, aparm.angle_max);
 
         // update attitude controller targets
-        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(poshold.roll, poshold.pitch, target_yaw_rate, get_smoothing_gain());
+        //attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(poshold.roll, poshold.pitch, target_yaw_rate, get_smoothing_gain());
+        // GG Only allow yaw control if ROI Yaw Hold is not active
+        if (!roi_yaw_hold_active) {
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "guided_pos_control_run 1- target_yaw_rate: %f", target_yaw_rate);
+            // roll & pitch from waypoint controller, yaw rate from pilot
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(poshold.roll, poshold.pitch, target_yaw_rate, get_smoothing_gain());
+        } else {
+            //gcs_send_text_fmt(MAV_SEVERITY_INFO, "guided_pos_control_run 2- get_auto_heading: %f", get_auto_heading());
+            // roll, pitch from waypoint controller, yaw heading from auto_heading()
+            attitude_control->input_euler_angle_roll_pitch_yaw(poshold.roll, poshold.pitch, get_auto_heading(), true, get_smoothing_gain());
+        }
 
         // adjust climb rate using rangefinder
         if (rangefinder_alt_ok()) {
